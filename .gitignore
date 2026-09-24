@@ -4,7 +4,16 @@ target/
 !**/src/test/**/target/
 .kotlin
 
+out/
+.idea/
+*.iml
+
+#Secrets
 .env
+
+### Build outputs ###
+*.jar
+!lib/*.jar
 
 ### IntelliJ IDEA ###
 .idea/modules.xml
@@ -12,7 +21,7 @@ target/
 .idea/compiler.xml
 .idea/libraries/
 *.iws
-*.iml
+
 *.ipr
 
 ### Eclipse ###
