@@ -11,7 +11,7 @@ import java.sql.SQLException;
                 .ignoreIfMissing()
                 .load();
 
-        private static final String URL = getEnv("DB_URL", "jdbc:mysql://localhost:3306/real_school");
+        private static final String URL = getEnv("DB_URL", "jdbc:mysql://localhost:3306/school");
         private static final String USER = getEnv("DB_USER", "root");
         private static final String PASSWORD = getEnv("DB_PASSWORD", null);
 
@@ -28,4 +28,4 @@ import java.sql.SQLException;
             return DriverManager.getConnection(URL, USER, PASSWORD);
         }
     }
-}
+
