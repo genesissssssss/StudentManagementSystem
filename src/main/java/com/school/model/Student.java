@@ -35,6 +35,8 @@ public class Student {
     public String getEmail() {return email;}
     public LocalDate getDateOfBirth() {return dateOfBirth; }
     public LocalDate getEnrollmentDate() {return enrollmentDate;}
+    public String getPhone() { return phone; }
+
 
     //setters for editing dialog to modify fields
 

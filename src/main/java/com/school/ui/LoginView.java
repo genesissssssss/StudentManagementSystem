@@ -27,7 +27,9 @@ public class LoginView {
         this.root = buildUI();
     }
 
-    /** The main layout — returned to Main.java to place in a Scene. */
+    /**
+     * The main layout — returned to Main.java to place in a Scene.
+     */
     public Parent getRoot() {
         return root;
     }
@@ -93,27 +95,33 @@ public class LoginView {
             return;
         }
 
-        // Success!
+
         System.out.println("Logged in as: " + user);
 
-        // Stage 3 will replace this with:
-        // navigateToDashboard(user);
-        Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        alert.setTitle("Login successful");
-        alert.setHeaderText(null);
-        alert.setContentText("Welcome, " + user.getUsername() + "! Role: " + user.getRole());
-        alert.showAndWait();
+        if (user.isAdmin()) {
+            AdminDashboard dashboard = new AdminDashboard(stage, user);
+            javafx.scene.Scene scene = new javafx.scene.Scene(dashboard.getRoot(), 1000, 700);
+            scene.getStylesheets().add(
+                    getClass().getResource("/style.css").toExternalForm()
+            );
+            stage.setScene(scene);
+            stage.setTitle("Admin Dashboard — " + user.getUsername());
+            stage.setResizable(true);
+        } else {
+            // Student dashboard comes in a later stage
+            showError("Student dashboard coming soon");
+        }
     }
 
-    private void showError(String message) {
-        errorLabel.setText("⚠ " + message);
-        errorLabel.setVisible(true);
-        errorLabel.setManaged(true);
-    }
+        private void showError (String message){
+            errorLabel.setText("⚠ " + message);
+            errorLabel.setVisible(true);
+            errorLabel.setManaged(true);
+        }
 
-    private VBox spacer(double height) {
-        VBox v = new VBox();
-        v.setPrefHeight(height);
-        return v;
+        private VBox spacer ( double height){
+            VBox v = new VBox();
+            v.setPrefHeight(height);
+            return v;
+        }
     }
-}
