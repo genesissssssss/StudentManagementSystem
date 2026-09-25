@@ -1,0 +1,39 @@
+.root {
+    -fx-background-color: #f5f7fa;
+    -fx-font-family: "Segoe UI", "San Francisco", "Roboto", sans-serif;
+}
+
+.label {
+    -fx-text-fill: #333;
+}
+
+.text-field, .password-field {
+    -fx-background-color: white;
+    -fx-border-color: #d0d7de;
+    -fx-border-radius: 6;
+    -fx-background-radius: 6;
+    -fx-padding: 8 12 8 12;
+    -fx-font-size: 13;
+}
+
+.text-field:focused, .password-field:focused {
+    -fx-border-color: #4a90e2;
+    -fx-border-width: 1.5;
+}
+
+.button {
+    -fx-background-color: #4a90e2;
+    -fx-text-fill: white;
+    -fx-font-size: 14;
+    -fx-font-weight: bold;
+    -fx-background-radius: 6;
+    -fx-cursor: hand;
+}
+
+.button:hover {
+    -fx-background-color: #357abd;
+}
+
+.button:pressed {
+    -fx-background-color: #2c639b;
+}
