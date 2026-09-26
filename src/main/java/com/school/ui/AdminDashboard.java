@@ -15,6 +15,7 @@ import javafx.collections.ObservableList;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.input.KeyCode;
 import java.time.format.DateTimeFormatter;
+import java.util.Optional;
 
 
 public class AdminDashboard {
@@ -195,10 +196,27 @@ public class AdminDashboard {
         return content;
     }
 
-    //start temporary
+
     private void handleAddStudent() {
-        Alert a = new Alert(Alert.AlertType.INFORMATION, "Add dialog coming in Stage 3D");
-        a.showAndWait();
+        StudentDialog dialog = new StudentDialog(stage, null);
+        Optional<Student> result = dialog.showAndWait();
+
+        result.ifPresent(student -> {
+            int newId = studentDAO.addStudent(student);
+            if (newId > 0) {
+                loadStudents();
+                // Select the newly-added student (nice UX)
+                studentsTable.getSelectionModel().select(
+                        studentsList.stream()
+                                .filter(s -> s.getId() == newId)
+                                .findFirst()
+                                .orElse(null)
+                );
+            } else {
+                new Alert(Alert.AlertType.ERROR,
+                        "Failed to add student. Email may already exist.").showAndWait();
+            }
+        });
     }
 
     private void handleEditStudent() {
@@ -207,21 +225,43 @@ public class AdminDashboard {
             new Alert(Alert.AlertType.WARNING, "Select a student first").showAndWait();
             return;
         }
-        Alert a = new Alert(Alert.AlertType.INFORMATION, "Edit dialog coming in Stage 3D");
-        a.showAndWait();
+
+        StudentDialog dialog = new StudentDialog(stage, selected);
+        Optional<Student> result = dialog.showAndWait();
+
+        result.ifPresent(updated -> {
+            boolean ok = studentDAO.updateStudent(updated);
+            if (ok) {
+                loadStudents();
+            } else {
+                new Alert(Alert.AlertType.ERROR, "Failed to update student.").showAndWait();
+            }
+        });
     }
 
-    private void handleDeleteStudent() {
+    private void handleDeleteStudent(){
         Student selected = studentsTable.getSelectionModel().getSelectedItem();
-        if (selected == null) {
-            new Alert(Alert.AlertType.WARNING, "Select a student first").showAndWait();
+        if (selected == null){
+            new Alert (Alert.AlertType.WARNING, "Select a student first").showAndWait();
             return;
         }
-        Alert a = new Alert(Alert.AlertType.INFORMATION, "Delete coming in Stage 3D");
-        a.showAndWait();
+        Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
+        confirm.setTitle("Delete Student");
+        confirm.setHeaderText(null);
+        confirm.setContentText("Delete" + selected.getName() + "?\n" + "?\n\n" +
+                "This will remove their enrollments. This cannot be undone");
+        Optional<ButtonType> answer = confirm.showAndWait();
+
+        if (answer.isPresent() && answer.get() == ButtonType.OK) {
+            boolean ok = studentDAO.deleteStudent(selected.getId());
+            if (ok){
+                loadStudents();
+            }else{
+                new Alert(Alert.AlertType.ERROR, "Failed to delete student.").showAndWait();
+            }
+        }
     }
 
-    //end
 
     private void loadStudents() {
         studentsList.setAll(studentDAO.getAllStudents());

@@ -79,3 +79,43 @@
 .table-row-cell:odd:selected {
     -fx-background-color: #d6e8ff;
 }
+
+.dialog-pane {
+    -fx-background-color: white;
+}
+
+.dialog-pane .label {
+    -fx-font-size: 13;
+    -fx-text-fill: #333;
+}
+
+.dialog-pane .text-field,
+.dialog-pane .date-picker {
+    -fx-background-color: white;
+    -fx-border-color: #d0d7de;
+    -fx-border-radius: 6;
+    -fx-background-radius: 6;
+    -fx-padding: 8 12 8 12;
+}
+
+.dialog-pane .text-field:focused,
+.dialog-pane .date-picker:focused {
+    -fx-border-color: #4a90e2;
+}
+
+.dialog-pane .button {
+    -fx-background-color: #e0e0e0;
+    -fx-text-fill: #333;
+    -fx-background-radius: 6;
+    -fx-padding: 8 20 8 20;
+    -fx-cursor: hand;
+}
+
+.dialog-pane .button.primary-button {
+    -fx-background-color: #27ae60;
+    -fx-text-fill: white;
+}
+
+.dialog-pane .button.primary-button:hover {
+    -fx-background-color: #219150;
+}
