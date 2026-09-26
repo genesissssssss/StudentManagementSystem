@@ -37,3 +37,45 @@
 .button:pressed {
     -fx-background-color: #2c639b;
 }
+/* Primary (blue) button */
+.button.primary-button {
+    -fx-background-color: #27ae60;
+}
+.button.primary-button:hover {
+    -fx-background-color: #219150;
+}
+
+/* Danger (red) button */
+.button.danger-button {
+    -fx-background-color: #e74c3c;
+}
+.button.danger-button:hover {
+    -fx-background-color: #c0392b;
+}
+
+/* Table */
+.table-view {
+    -fx-background-color: white;
+    -fx-border-color: #e1e4e8;
+    -fx-border-radius: 6;
+    -fx-background-radius: 6;
+}
+
+.table-view .column-header {
+    -fx-background-color: #f5f7fa;
+    -fx-font-weight: bold;
+    -fx-font-size: 12;
+    -fx-border-color: transparent transparent #e1e4e8 transparent;
+}
+
+.table-row-cell:selected {
+    -fx-background-color: #d6e8ff;
+    -fx-text-background-color: #1a1a1a;
+}
+
+.table-row-cell:odd {
+    -fx-background-color: #fafbfc;
+}
+.table-row-cell:odd:selected {
+    -fx-background-color: #d6e8ff;
+}

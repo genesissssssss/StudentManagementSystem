@@ -7,6 +7,14 @@ import javafx.scene.Parent;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import javafx.stage.Stage;
+import com.school.dao.StudentDAO;
+import com.school.model.Student;
+import javafx.beans.property.SimpleStringProperty;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
+import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.input.KeyCode;
+import java.time.format.DateTimeFormatter;
 
 
 public class AdminDashboard {
@@ -14,6 +22,10 @@ public class AdminDashboard {
     private final Stage stage;
     private final User currentUser;
     private final BorderPane root;
+    private final StudentDAO studentDAO = new StudentDAO();
+    private final ObservableList<Student> studentsList = FXCollections.observableArrayList();
+    private TableView<Student> studentsTable;
+    private TextField searchField;
 
     public AdminDashboard(Stage stage, User currentUser) {
         this.stage = stage;
@@ -81,8 +93,138 @@ public class AdminDashboard {
 
     //Students tab
     private VBox buildStudentsTab() {
-        // Filled in next sub-step
-        return new VBox();
+        // Toolbar
+        Button addBtn    = new Button("+ Add");
+        Button editBtn   = new Button("✎ Edit");
+        Button deleteBtn = new Button("🗑 Delete");
+        Button clearBtn  = new Button("Clear");
+
+        addBtn.getStyleClass().add("primary-button");
+        deleteBtn.getStyleClass().add("danger-button");
+
+        addBtn.setOnAction(e -> handleAddStudent());
+        editBtn.setOnAction(e -> handleEditStudent());
+        deleteBtn.setOnAction(e -> handleDeleteStudent());
+        clearBtn.setOnAction(e -> {
+            searchField.clear();
+            loadStudents();
+        });
+
+        searchField = new TextField();
+        searchField.setPromptText("Search by name…");
+        searchField.setPrefWidth(220);
+        searchField.textProperty().addListener((obs, oldVal, newVal) -> {
+            if (newVal.isBlank()) loadStudents();
+            else studentsList.setAll(studentDAO.searchByName(newVal.trim()));
+        });
+
+        Region spacer = new Region();
+        HBox.setHgrow(spacer, Priority.ALWAYS);
+
+        HBox toolbar = new HBox(10,
+                addBtn, editBtn, deleteBtn,
+                spacer,
+                new Label("🔍"), searchField, clearBtn
+        );
+        toolbar.setAlignment(Pos.CENTER_LEFT);
+        toolbar.setPadding(new Insets(12));
+
+        //Table
+        studentsTable = new TableView<>();
+        studentsTable.setItems(studentsList);
+        studentsTable.setPlaceholder(new Label("No students yet. Click '+ Add' to create one."));
+
+        TableColumn<Student, Integer> idCol = new TableColumn<>("ID");
+        idCol.setCellValueFactory(new PropertyValueFactory<>("id"));
+        idCol.setPrefWidth(60);
+
+        TableColumn<Student, String> nameCol = new TableColumn<>("Name");
+        nameCol.setCellValueFactory(new PropertyValueFactory<>("name"));
+        nameCol.setPrefWidth(200);
+
+        TableColumn<Student, String> emailCol = new TableColumn<>("Email");
+        emailCol.setCellValueFactory(new PropertyValueFactory<>("email"));
+        emailCol.setPrefWidth(250);
+
+        TableColumn<Student, String> phoneCol = new TableColumn<>("Phone");
+        phoneCol.setCellValueFactory(new PropertyValueFactory<>("phone"));
+        phoneCol.setPrefWidth(140);
+
+        // DOB column — needs a custom cellValueFactory because LocalDate isn't a String
+        TableColumn<Student, String> dobCol = new TableColumn<>("Date of Birth");
+        dobCol.setCellValueFactory(cellData -> {
+            Student s = cellData.getValue();
+            String text = s.getDateOfBirth() == null
+                    ? "—"
+                    : s.getDateOfBirth().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+            return new SimpleStringProperty(text);
+        });
+        dobCol.setPrefWidth(120);
+
+        // Enrollment column
+        TableColumn<Student, String> enrolledCol = new TableColumn<>("Enrolled");
+        enrolledCol.setCellValueFactory(cellData -> {
+            Student s = cellData.getValue();
+            String text = s.getEnrollmentDate() == null
+                    ? "—"
+                    : s.getEnrollmentDate().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+            return new SimpleStringProperty(text);
+        });
+        enrolledCol.setPrefWidth(120);
+
+        studentsTable.getColumns().addAll(idCol, nameCol, emailCol, phoneCol, dobCol, enrolledCol);
+
+        // Double-click a row = Edit
+        studentsTable.setRowFactory(tv -> {
+            TableRow<Student> row = new TableRow<>();
+            row.setOnMouseClicked(event -> {
+                if (event.getClickCount() == 2 && !row.isEmpty()) {
+                    handleEditStudent();
+                }
+            });
+            return row;
+        });
+
+        // Assemble
+        VBox content = new VBox(10, toolbar, studentsTable);
+        content.setPadding(new Insets(10, 15, 15, 15));
+        VBox.setVgrow(studentsTable, Priority.ALWAYS);
+
+        // Initial load
+        loadStudents();
+        return content;
+    }
+
+    //start temporary
+    private void handleAddStudent() {
+        Alert a = new Alert(Alert.AlertType.INFORMATION, "Add dialog coming in Stage 3D");
+        a.showAndWait();
+    }
+
+    private void handleEditStudent() {
+        Student selected = studentsTable.getSelectionModel().getSelectedItem();
+        if (selected == null) {
+            new Alert(Alert.AlertType.WARNING, "Select a student first").showAndWait();
+            return;
+        }
+        Alert a = new Alert(Alert.AlertType.INFORMATION, "Edit dialog coming in Stage 3D");
+        a.showAndWait();
+    }
+
+    private void handleDeleteStudent() {
+        Student selected = studentsTable.getSelectionModel().getSelectedItem();
+        if (selected == null) {
+            new Alert(Alert.AlertType.WARNING, "Select a student first").showAndWait();
+            return;
+        }
+        Alert a = new Alert(Alert.AlertType.INFORMATION, "Delete coming in Stage 3D");
+        a.showAndWait();
+    }
+
+    //end
+
+    private void loadStudents() {
+        studentsList.setAll(studentDAO.getAllStudents());
     }
 
     private void handleLogout() {

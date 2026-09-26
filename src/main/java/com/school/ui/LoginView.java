@@ -27,9 +27,6 @@ public class LoginView {
         this.root = buildUI();
     }
 
-    /**
-     * The main layout — returned to Main.java to place in a Scene.
-     */
     public Parent getRoot() {
         return root;
     }
