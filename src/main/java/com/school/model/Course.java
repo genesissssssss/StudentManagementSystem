@@ -9,18 +9,18 @@ public class Course {
     private int credits;
 
     //for new courses
-    public Course(String code, String name, String instructors, int credits){
+    public Course(String code, String name, String instructor, int credits){
         this.code = code;
-        this.code = name;
-        this.instructor = instructors;
+        this.name = name;
+        this.instructor = instructor;
         this.credits = credits;
     }
     //for existing courses
-    public Course(int id, String code, String name, String instructors, int credits){
+    public Course(int id, String code, String name, String instructor, int credits){
         this.id = id;
         this.code = code;
         this.name = name;
-        this.instructor = instructors;
+        this.instructor = instructor;
         this.credits = credits;
     }
     public int getId() {return  id; }
@@ -31,6 +31,6 @@ public class Course {
 
     public void setCode(String code) {this.code = code; }
     public void setName(String name) {this.name = name; }
-    public void setInstructors(String instructors) {this.instructor = instructors;}
+    public void setInstructor(String instructor) {this.instructor = instructor;}
     public void setCredits(int credits) {this.credits = credits;}
 }

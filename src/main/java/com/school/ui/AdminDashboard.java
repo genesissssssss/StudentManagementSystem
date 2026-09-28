@@ -13,10 +13,11 @@ import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.scene.control.cell.PropertyValueFactory;
-import javafx.scene.input.KeyCode;
+
 import java.time.format.DateTimeFormatter;
 import java.util.Optional;
-
+import com.school.dao.CourseDAO;
+import com.school.model.Course;
 
 public class AdminDashboard {
 
@@ -27,6 +28,10 @@ public class AdminDashboard {
     private final ObservableList<Student> studentsList = FXCollections.observableArrayList();
     private TableView<Student> studentsTable;
     private TextField searchField;
+    private final CourseDAO courseDAO = new CourseDAO();
+    private final ObservableList<Course> coursesList = FXCollections.observableArrayList();
+    private TableView<Course> coursesTable;
+    private TextField courseSearchField;
 
     public AdminDashboard(Stage stage, User currentUser) {
         this.stage = stage;
@@ -75,14 +80,171 @@ public class AdminDashboard {
         Tab studentsTab = new Tab("Students");
         studentsTab.setContent(buildStudentsTab());
 
-        Tab courseTab = new Tab("Courses");
-        courseTab.setContent(placeholder("Courses"));
+        Tab coursesTab = new Tab("Courses");
+        coursesTab.setContent(buildCoursesTab());
 
         Tab enrollmentsTab = new Tab("Enrollments");
         enrollmentsTab.setContent(placeholder("Enrollments"));
-        tabPane.getTabs().addAll(studentsTab, courseTab, enrollmentsTab);
+        tabPane.getTabs().addAll(studentsTab, coursesTab, enrollmentsTab);
         return tabPane;
     }
+
+    private VBox buildCoursesTab(){
+
+        //ToolBar
+
+        Button addBtn = new Button("+ Add");
+        Button editBtn = new Button("✎ Edit");
+        Button deleteBtn = new Button("🗑 Delete");
+        Button clearBtn  = new Button("Clear");
+
+        addBtn.getStyleClass().add("primary-button");
+        deleteBtn.getStyleClass().add("danger-button");
+
+        addBtn.setOnAction(e -> handleAddCourse());
+        editBtn.setOnAction(e -> handleEditCourse());
+        deleteBtn.setOnAction(e -> handleDeleteCourse());
+        clearBtn.setOnAction(e -> {
+            courseSearchField.clear();
+            loadCourses();
+        });
+
+        courseSearchField = new TextField();
+        courseSearchField.setPromptText("Search code, name, or instructor...");
+        courseSearchField.setPrefWidth(260);
+        courseSearchField.textProperty().addListener((obs, oldVal, newVal) -> {
+
+            if(newVal.isBlank()) loadCourses();
+            else coursesList.setAll(courseDAO.searchCourses(newVal.trim()));
+
+        });
+
+        Region spacer = new Region();
+        HBox.setHgrow(spacer, Priority.ALWAYS);
+
+        HBox toolbar = new HBox(10,
+                addBtn, editBtn, deleteBtn,
+                spacer,
+                new Label("🔍"), courseSearchField, clearBtn);
+
+        toolbar.setAlignment(Pos.CENTER_LEFT);
+        toolbar.setPadding(new Insets(12));
+
+        //Table
+        coursesTable = new TableView<>();
+        coursesTable.setItems(coursesList);
+        coursesTable.setPlaceholder(new Label("No courses yet. Click '+ Add' to create one."));
+
+        TableColumn<Course, Integer> idCol = new TableColumn<>("ID");
+        idCol.setCellValueFactory(new PropertyValueFactory<>("id"));
+        idCol.setPrefWidth(60);
+
+        TableColumn<Course, String> codeCol = new TableColumn<>("Code");
+        codeCol.setCellValueFactory(new PropertyValueFactory<>("code"));
+        codeCol.setPrefWidth(100);
+
+        TableColumn<Course, String> nameCol = new TableColumn<>("Name");
+        nameCol.setCellValueFactory(new PropertyValueFactory<>("name"));
+        nameCol.setPrefWidth(280);
+
+        TableColumn<Course, String> instrCol = new TableColumn<>("Instructor");
+        instrCol.setCellValueFactory(new PropertyValueFactory<>("instructor"));
+        instrCol.setPrefWidth(200);
+
+        TableColumn<Course, Integer> credCol = new TableColumn<>("Credits");
+        credCol.setCellValueFactory(new PropertyValueFactory<>("credits"));
+        credCol.setPrefWidth(80);
+
+        coursesTable.getColumns().addAll(idCol, codeCol, nameCol, instrCol, credCol);
+
+        coursesTable.setRowFactory(tv -> {
+            TableRow<Course> row = new TableRow<>();
+            row.setOnMouseClicked(event -> {
+                    if(event.getClickCount() == 2 && !row.isEmpty()) {
+                        handleEditCourse();
+
+                    }
+
+            });
+            return row;
+        });
+
+        VBox content = new VBox(10, toolbar, coursesTable);
+        content.setPadding(new Insets(10, 15, 15, 15));
+        VBox.setVgrow(coursesTable, Priority.ALWAYS);
+
+        loadCourses();
+        return content;
+    }
+
+    private void loadCourses() {
+        coursesList.setAll(courseDAO.getAllCourses());
+    }
+
+    private void handleAddCourse(){
+        CourseDialog dialog = new CourseDialog(stage, null);
+        dialog.showAndWait().ifPresent(course -> {
+            int newId = courseDAO.addCourse(course);
+            if (newId > 0) {
+                loadCourses();
+                coursesTable.getSelectionModel().select(
+                        coursesList.stream()
+                                .filter(c -> c.getId() == newId)
+                                .findFirst()
+                                .orElse(null)
+                );
+            } else {
+                new Alert(Alert.AlertType.ERROR,
+                        "Failed to add course. Code may already exist.").showAndWait();
+
+            }
+        });
+    }
+
+    private void handleEditCourse() {
+        Course selected = coursesTable.getSelectionModel().getSelectedItem();
+        if (selected == null){
+            new Alert(Alert.AlertType.WARNING, "Select a course first").showAndWait();
+            return;
+        }
+
+        CourseDialog dialog = new CourseDialog(stage, selected);
+        dialog.showAndWait().ifPresent(updated -> {
+            if(courseDAO.updateCourse(updated)) {
+                loadCourses();
+            }else{
+                new Alert(Alert.AlertType.ERROR, "Failed to update course.").showAndWait();
+            }
+        });
+    }
+
+    private void handleDeleteCourse(){
+        Course selected = coursesTable.getSelectionModel().getSelectedItem();
+        if(selected == null){
+            new Alert(Alert.AlertType.WARNING, "Select a course first").showAndWait();
+            return;
+        }
+
+        Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
+        confirm.setTitle("Delete Course");
+        confirm.setHeaderText(null);
+        confirm.setContentText("Delete " + selected.getCode() + " - " + selected.getName()
+        + "?\n\n" + "This will also remove all enrollments for this course.");
+        Optional<ButtonType> answer = confirm.showAndWait();
+
+        if (answer.isPresent() && answer.get() == ButtonType.OK) {
+            if (courseDAO.deleteCourse(selected.getId())) {
+                loadCourses();
+            }else {
+                new Alert(Alert.AlertType.ERROR, "Failed to delete course.").showAndWait();
+
+            }
+        }
+    }
+
+
+
+
 
     private VBox placeholder(String text) {
         Label lbl = new Label(text);

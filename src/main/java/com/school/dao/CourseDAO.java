@@ -71,8 +71,8 @@ public class CourseDAO {
     //SEARCH
     public List<Course> searchCourses(String keyword){
     List<Course> list = new ArrayList<>();
-    String sql = "SELECT * FROM courses" +
-                 "WHERE code LIKE ? OR name LIKE ? OR instructor LIKE ?" +
+    String sql = "SELECT * FROM courses " +
+                 "WHERE code LIKE ? OR name LIKE ? OR instructor LIKE ? " +
                  "ORDER BY code";
 
     try (Connection conn = DBConnection.getConnection();
