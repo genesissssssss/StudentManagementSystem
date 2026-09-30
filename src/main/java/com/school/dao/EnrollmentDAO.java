@@ -12,7 +12,7 @@ import java.util.List;
 public class EnrollmentDAO {
 
     private static final String BASE_QUERY =
-            "SELECT e.id, e.grade, e.enrolledAt, " +
+            "SELECT e.id, e.grade, e.enrolled_at, " +
             "       s.id AS student_id, s.name AS student_name, " +
             "       c.id AS course_id, c.code AS course_code, c.name AS course_name " +
             "FROM enrollments e " +

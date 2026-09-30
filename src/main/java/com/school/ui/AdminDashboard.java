@@ -19,6 +19,12 @@ import java.util.Optional;
 import com.school.dao.CourseDAO;
 import com.school.model.Course;
 
+import com.school.dao.EnrollmentDAO;
+import com.school.model.Enrollment;
+import java.math.BigDecimal;
+import java.time.format.DateTimeFormatter;
+import javafx.beans.property.SimpleStringProperty;
+
 public class AdminDashboard {
 
     private final Stage stage;
@@ -32,6 +38,11 @@ public class AdminDashboard {
     private final ObservableList<Course> coursesList = FXCollections.observableArrayList();
     private TableView<Course> coursesTable;
     private TextField courseSearchField;
+    private final EnrollmentDAO enrollmentDAO = new EnrollmentDAO();
+    private final ObservableList<Enrollment> enrollmentsList = FXCollections.observableArrayList();
+    private TableView<Enrollment> enrollmentsTable;
+    private TextField enrollmentSearchField;
+
 
     public AdminDashboard(Stage stage, User currentUser) {
         this.stage = stage;
@@ -84,9 +95,170 @@ public class AdminDashboard {
         coursesTab.setContent(buildCoursesTab());
 
         Tab enrollmentsTab = new Tab("Enrollments");
-        enrollmentsTab.setContent(placeholder("Enrollments"));
+        enrollmentsTab.setContent(buildEnrollmentsTab());
         tabPane.getTabs().addAll(studentsTab, coursesTab, enrollmentsTab);
         return tabPane;
+    }
+
+    private VBox buildEnrollmentsTab() {
+        Button addBtn    = new Button("+ Enroll");
+        Button editBtn   = new Button("✎ Edit Grade");
+        Button deleteBtn = new Button("🗑 Delete");
+        Button clearBtn  = new Button("Clear");
+
+        addBtn.getStyleClass().add("primary-button");
+        deleteBtn.getStyleClass().add("danger-button");
+
+        addBtn.setOnAction(e -> handleAddEnrollment());
+        editBtn.setOnAction(e -> handleEditEnrollment());
+        deleteBtn.setOnAction(e -> handleDeleteEnrollment());
+        clearBtn.setOnAction(e -> {
+            enrollmentSearchField.clear();
+            loadEnrollments();
+        });
+
+        enrollmentSearchField = new TextField();
+        enrollmentSearchField.setPromptText("Search student or course…");
+        enrollmentSearchField.setPrefWidth(260);
+        enrollmentSearchField.textProperty().addListener((obs, oldVal, newVal) -> {
+            if (newVal.isBlank()) loadEnrollments();
+            else enrollmentsList.setAll(enrollmentDAO.searchEnrollments(newVal.trim()));
+        });
+
+        Region spacer = new Region();
+        HBox.setHgrow(spacer, Priority.ALWAYS);
+
+        HBox toolbar = new HBox(10,
+                addBtn, editBtn, deleteBtn,
+                spacer,
+                new Label("🔍"), enrollmentSearchField, clearBtn
+        );
+        toolbar.setAlignment(Pos.CENTER_LEFT);
+        toolbar.setPadding(new Insets(12));
+
+        enrollmentsTable = new TableView<>();
+        enrollmentsTable.setItems(enrollmentsList);
+        enrollmentsTable.setPlaceholder(new Label("No enrollments yet. Click '+ Enroll' to create one."));
+
+        TableColumn<Enrollment, Integer> idCol = new TableColumn<>("ID");
+        idCol.setCellValueFactory(new PropertyValueFactory<>("id"));
+        idCol.setPrefWidth(50);
+
+        TableColumn<Enrollment, String> studentCol = new TableColumn<>("Student");
+        studentCol.setCellValueFactory(new PropertyValueFactory<>("studentName"));
+        studentCol.setPrefWidth(200);
+
+        TableColumn<Enrollment, String> courseCodeCol = new TableColumn<>("Course");
+        courseCodeCol.setCellValueFactory(new PropertyValueFactory<>("courseCode"));
+        courseCodeCol.setPrefWidth(100);
+
+        TableColumn<Enrollment, String> courseNameCol = new TableColumn<>("Course Name");
+        courseNameCol.setCellValueFactory(new PropertyValueFactory<>("courseName"));
+        courseNameCol.setPrefWidth(260);
+
+        TableColumn<Enrollment, String> gradeCol = new TableColumn<>("Grade");
+        gradeCol.setCellValueFactory(cellData -> {
+            BigDecimal g = cellData.getValue().getGrade();
+            return new SimpleStringProperty(g == null ? "—" : g.toPlainString());
+        });
+        gradeCol.setPrefWidth(80);
+
+        TableColumn<Enrollment, String> dateCol = new TableColumn<>("Enrolled");
+        dateCol.setCellValueFactory(cellData -> {
+            var d = cellData.getValue().getEnrolledAt();
+            return new SimpleStringProperty(d == null ? "—"
+                    : d.format(DateTimeFormatter.ofPattern("yyyy-MM-dd")));
+        });
+        dateCol.setPrefWidth(120);
+
+        enrollmentsTable.getColumns().addAll(
+                idCol, studentCol, courseCodeCol, courseNameCol, gradeCol, dateCol
+        );
+
+        enrollmentsTable.setRowFactory(tv -> {
+            TableRow<Enrollment> row = new TableRow<>();
+            row.setOnMouseClicked(event -> {
+                if (event.getClickCount() == 2 && !row.isEmpty()) handleEditEnrollment();
+            });
+            return row;
+        });
+
+        VBox content = new VBox(10, toolbar, enrollmentsTable);
+        content.setPadding(new Insets(10, 15, 15, 15));
+        VBox.setVgrow(enrollmentsTable, Priority.ALWAYS);
+
+        loadEnrollments();
+        return content;
+    }
+
+    private void loadEnrollments() {
+        enrollmentsList.setAll(enrollmentDAO.getAllEnrollments());
+    }
+
+    private void handleAddEnrollment() {
+        // Guard: need at least one student and one course
+        if (new StudentDAO().getAllStudents().isEmpty() ||
+                new CourseDAO().getAllCourses().isEmpty()) {
+            new Alert(Alert.AlertType.WARNING,
+                    "Add at least one student and one course first.").showAndWait();
+            return;
+        }
+
+        EnrollmentDialog dialog = new EnrollmentDialog(stage, null);
+        dialog.showAndWait().ifPresent(e -> {
+            int newId = enrollmentDAO.addEnrollment(e);
+            if (newId > 0) {
+                loadEnrollments();
+                enrollmentsTable.getSelectionModel().select(
+                        enrollmentsList.stream()
+                                .filter(en -> en.getId() == newId)
+                                .findFirst().orElse(null)
+                );
+            } else {
+                new Alert(Alert.AlertType.ERROR,
+                        "Failed to enroll. Student may already be enrolled in this course.").showAndWait();
+            }
+        });
+    }
+
+    private void handleEditEnrollment() {
+        Enrollment selected = enrollmentsTable.getSelectionModel().getSelectedItem();
+        if (selected == null) {
+            new Alert(Alert.AlertType.WARNING, "Select an enrollment first").showAndWait();
+            return;
+        }
+
+        EnrollmentDialog dialog = new EnrollmentDialog(stage, selected);
+        dialog.showAndWait().ifPresent(updated -> {
+            if (enrollmentDAO.updateGrade(updated.getId(), updated.getGrade())) {
+                loadEnrollments();
+            } else {
+                new Alert(Alert.AlertType.ERROR, "Failed to update grade.").showAndWait();
+            }
+        });
+    }
+
+    private void handleDeleteEnrollment() {
+        Enrollment selected = enrollmentsTable.getSelectionModel().getSelectedItem();
+        if (selected == null) {
+            new Alert(Alert.AlertType.WARNING, "Select an enrollment first").showAndWait();
+            return;
+        }
+
+        Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
+        confirm.setTitle("Delete Enrollment");
+        confirm.setHeaderText(null);
+        confirm.setContentText("Remove " + selected.getStudentName() +
+                " from " + selected.getCourseCode() + "?");
+        Optional<ButtonType> answer = confirm.showAndWait();
+
+        if (answer.isPresent() && answer.get() == ButtonType.OK) {
+            if (enrollmentDAO.deleteEnrollment(selected.getId())) {
+                loadEnrollments();
+            } else {
+                new Alert(Alert.AlertType.ERROR, "Failed to delete enrollment.").showAndWait();
+            }
+        }
     }
 
     private VBox buildCoursesTab(){
