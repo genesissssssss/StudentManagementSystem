@@ -14,7 +14,8 @@ public class EnrollmentDAO {
     private static final String BASE_QUERY =
             "SELECT e.id, e.grade, e.enrolled_at, " +
             "       s.id AS student_id, s.name AS student_name, " +
-            "       c.id AS course_id, c.code AS course_code, c.name AS course_name " +
+            "       c.id AS course_id, c.code AS course_code, c.name AS course_name, " +
+            "       c.credits AS course_credits " +
             "FROM enrollments e " +
             "JOIN students s ON e.student_id = s.id " +
             "JOIN courses  c ON e.course_id  = c.id ";
@@ -63,7 +64,7 @@ public class EnrollmentDAO {
     }
 
     //READ (for student)
-    public List<Enrollment> getEnrollmentByStudent(int studentId){
+    public List<Enrollment> getEnrollmentsByStudent(int studentId){
         List<Enrollment> list = new ArrayList<>();
         String sql = BASE_QUERY + "WHERE e.student_id = ? ORDER BY c.code";
 
@@ -145,7 +146,8 @@ public class EnrollmentDAO {
         return new Enrollment(
                 rs.getInt("id"),
                 rs.getInt("student_id"), rs.getString("student_name"),
-                rs.getInt("course_id"), rs.getString("course_code"), rs.getString("course_name"),
+                rs.getInt("course_id"), rs.getString("course_code"),
+                rs.getString("course_name"), rs.getInt("course_credits"),
                 grade, enrolled
         );
     }

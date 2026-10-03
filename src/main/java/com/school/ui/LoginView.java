@@ -1,5 +1,6 @@
 package com.school.ui;
 
+import com.school.model.Student;
 import com.school.model.User;
 import com.school.service.AuthService;
 import javafx.geometry.Insets;
@@ -10,6 +11,7 @@ import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.stage.Stage;
+import javafx.scene.Scene;
 
 public class LoginView {
 
@@ -104,9 +106,21 @@ public class LoginView {
             stage.setScene(scene);
             stage.setTitle("Admin Dashboard — " + user.getUsername());
             stage.setResizable(true);
+        } else if (user.isStudent()) {
+            if (user.getStudentId() == null){
+                showError("This account has no linked student record. ");
+                return;
+            }
+            StudentDashboard dashboard = new StudentDashboard(stage, user);
+            Scene scene = new Scene(dashboard.getRoot(), 900, 650);
+            scene.getStylesheets().add(getClass().getResource("/style.css").toExternalForm());
+            stage.setScene(scene);
+            stage.setTitle("Student Portal — " + user.getUsername());
+            stage.setResizable(true);
+
         } else {
             // Student dashboard comes in a later stage
-            showError("Student dashboard coming soon");
+            showError("Wrong info ");
         }
     }
 

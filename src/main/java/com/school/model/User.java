@@ -9,19 +9,22 @@ public class User {
     private String passwordHash;
     private Role user_role;
     private Integer studentId;
+    private String studentName;
 
-    public User(int id, String username, String passwordHash, Role user_role, Integer studentId){
+    public User(int id, String username, String passwordHash, Role user_role, Integer studentId, String studentName){
         this.id =id;
         this.username = username;
         this.passwordHash = passwordHash;
         this.user_role = user_role;
         this.studentId = studentId;
+        this.studentName = studentName;
     }
     public int getId() { return id; }
     public String getUsername() { return username; }
     public String getPasswordHash() { return passwordHash; }
     public Role getRole() { return user_role; }
     public Integer getStudentId() { return studentId; }
+    public String getStudentName() {return studentName; }
 
     public boolean isAdmin() { return user_role == Role.ADMIN; }
     public boolean isStudent() { return user_role == Role.STUDENT; }

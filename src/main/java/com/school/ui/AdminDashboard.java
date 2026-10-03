@@ -1,6 +1,8 @@
 package com.school.ui;
 
+import com.school.dao.UserDAO;
 import com.school.model.User;
+import com.school.service.AuthService;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Parent;
@@ -42,6 +44,10 @@ public class AdminDashboard {
     private final ObservableList<Enrollment> enrollmentsList = FXCollections.observableArrayList();
     private TableView<Enrollment> enrollmentsTable;
     private TextField enrollmentSearchField;
+    private final UserDAO userDAO = new UserDAO();
+    private final AuthService authService = new AuthService();
+    private final ObservableList<User> usersList = FXCollections.observableArrayList();
+    private TableView<User> accountsTable;
 
 
     public AdminDashboard(Stage stage, User currentUser) {
@@ -96,9 +102,142 @@ public class AdminDashboard {
 
         Tab enrollmentsTab = new Tab("Enrollments");
         enrollmentsTab.setContent(buildEnrollmentsTab());
-        tabPane.getTabs().addAll(studentsTab, coursesTab, enrollmentsTab);
+        Tab accountsTab = new Tab("Accounts");
+        accountsTab.setContent(buildAccountsTab());
+
+        tabPane.getTabs().addAll(studentsTab, coursesTab, enrollmentsTab, accountsTab);
         return tabPane;
     }
+
+    private VBox buildAccountsTab(){
+        Button createBtn = new Button("+ Create Account");
+        Button resetBtn = new Button("🔑 Reset Password");
+        Button deleteBtn = new Button("🗑 Delete");
+
+        createBtn.getStyleClass().add("primary-button");
+        deleteBtn.getStyleClass().add("danger-button");
+
+        createBtn.setOnAction(e -> handleCreateAccount());
+        resetBtn.setOnAction(e -> handleResetPassword());
+        deleteBtn.setOnAction(e -> handleDeleteAccount());
+
+        HBox toolbar = new HBox(10, createBtn, resetBtn, deleteBtn);
+        toolbar.setAlignment(Pos.CENTER_LEFT);
+        toolbar.setPadding(new Insets(12));
+
+        accountsTable = new TableView<>();
+        accountsTable.setItems(usersList);
+        accountsTable.setPlaceholder(new Label("No users yet."));
+
+        TableColumn<User, Integer> idCol = new TableColumn<>("ID");
+        idCol.setPrefWidth(60);
+
+        TableColumn<User, String> userCol = new TableColumn<>("Username");
+        userCol.setCellValueFactory(new PropertyValueFactory<>("username"));
+        userCol.setPrefWidth(180);
+
+        TableColumn<User, String> roleCol = new TableColumn<>("Role");
+        roleCol.setCellValueFactory(cell -> new SimpleStringProperty(cell.getValue().getRole().name()));
+        roleCol.setPrefWidth(120);
+
+        TableColumn<User, String> studentCol = new TableColumn<>("Linked Student");
+        studentCol.setCellValueFactory(cell -> {
+            User u = cell.getValue();
+            if (u.getRole() == User.Role.ADMIN) return  new SimpleStringProperty("—");
+            String name = u.getStudentName();
+            return new SimpleStringProperty(name == null ? "(unlinked)" : name);
+        });
+        studentCol.setPrefWidth(300);
+
+        accountsTable.getColumns().addAll(idCol, userCol, roleCol, studentCol);
+
+        VBox content = new VBox(10, toolbar, accountsTable);
+        content.setPadding(new Insets(10, 15, 15, 15));
+        VBox.setVgrow(accountsTable, Priority.ALWAYS);
+
+        loadAccounts();
+        return content;
+    }
+
+    private  void loadAccounts(){
+        usersList.setAll(userDAO.getAllUsers());
+    }
+
+    private void handleCreateAccount(){
+        AccountDialog dialog = new AccountDialog(stage);
+        dialog.showAndWait().ifPresent(data ->{
+            boolean ok = authService.register(data.username, data.password, data.role, data.studentId);
+            if (ok){
+                loadAccounts();
+            }else {
+                new Alert(Alert.AlertType.ERROR,
+                        "Failed to create account. Username may already exist, \n" +
+                        "or the password doesn't meet requirements.").showAndWait();
+            }
+        });
+    }
+
+    private void handleResetPassword(){
+        User selected = accountsTable.getSelectionModel().getSelectedItem();
+        if (selected == null){
+            new Alert(Alert.AlertType.WARNING, "Select an account first").showAndWait();
+            return;
+        }
+        TextInputDialog dialog = new TextInputDialog();
+        dialog.initOwner(stage);
+        dialog.setTitle("Reset Password");
+        dialog.setHeaderText("Reset password for '" + selected.getUsername() + "'");
+        dialog.setContentText("New password (min 6 chars):");
+
+        dialog.showAndWait().ifPresent(newPassword -> {
+            if (newPassword.length() < 6){
+                new Alert(Alert.AlertType.ERROR, "Password must be at least 6 characters.").showAndWait();
+                return;
+            }
+            if (authService.changePassword(selected.getId(), newPassword)){
+                new Alert(Alert.AlertType.INFORMATION, "Password updated for '" + selected.getUsername() + "' .").showAndWait();
+            }else {
+                new Alert(Alert.AlertType.ERROR, "Failed to update password.").showAndWait();
+            }
+        });
+    }
+
+    private void handleDeleteAccount(){
+        User selected = accountsTable.getSelectionModel().getSelectedItem();
+
+        if (selected == null){
+            new Alert(Alert.AlertType.WARNING, "Select an account first").showAndWait();
+            return;
+        }
+        // Safety: don't let the current admin delete themselves
+        if (selected.getId() == currentUser.getId()) {
+            new Alert(Alert.AlertType.WARNING,
+                    "You can't delete your own account while logged in.").showAndWait();
+            return;
+        }
+
+        Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
+        confirm.initOwner(stage);
+        confirm.setTitle("Delete Account");
+        confirm.setHeaderText(null);
+        confirm.setContentText("Delete account '" + selected.getUsername() + "'?\n\n" +
+                (selected.getRole() == User.Role.STUDENT
+                ? "The student record itself will NOT be deleted."
+                        : "This cannot be undone."));
+        Optional<ButtonType> answer = confirm.showAndWait();
+
+        if (answer.isPresent() && answer.get() == ButtonType.OK){
+            if (userDAO.deleteUser(selected.getId())){
+                loadAccounts();
+            }else {
+
+                new Alert(Alert.AlertType.ERROR, "Failed to delete account").showAndWait();
+
+            }
+        }
+    }
+
+
 
     private VBox buildEnrollmentsTab() {
         Button addBtn    = new Button("+ Enroll");

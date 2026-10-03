@@ -13,11 +13,12 @@ public class Enrollment {
     private String courseName;
     private BigDecimal grade;
     private LocalDate enrolledAt;
+    private int courseCredits;
 
     //Constructor for existing rows
     public Enrollment(int id,
                       int studentId, String studentName,
-                      int courseId, String courseCode, String courseName,
+                      int courseId, String courseCode, String courseName, int courseCredits,
                       BigDecimal grade, LocalDate enrolledAt) {
 
         this.id = id;
@@ -26,6 +27,7 @@ public class Enrollment {
         this.courseId = courseId;
         this.courseCode = courseCode;
         this.courseName = courseName;
+        this.courseCredits = courseCredits;
         this.grade = grade;
         this.enrolledAt = enrolledAt;
     }
@@ -45,6 +47,7 @@ public class Enrollment {
     public String getCourseName() {return courseName; }
     public BigDecimal getGrade() {return grade; }
     public LocalDate getEnrolledAt() {return enrolledAt; }
+    public int getCourseCredits() { return courseCredits; }
 
     public void setGrade(BigDecimal grade) {this.grade = grade;}
 }
