@@ -1,7 +1,10 @@
+#Maven
 target/
 !.mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
 !**/src/test/**/target/
+dependency-reduced-pom.xml
+
 .kotlin
 
 out/
@@ -49,4 +52,4 @@ build/
 .vscode/
 
 ### Mac OS ###
-.DS_Store
+.DS_Store.idea/
