@@ -76,15 +76,15 @@ public class StudentDashboard {
     }
 
     //center content
-    private VBox buildContent(){
+    private VBox buildContent() {
         // Load enrollments
         List<Enrollment> list = enrollmentDAO.getEnrollmentsByStudent(student.getId());
         myEnrollments.setAll(list);
 
-        //Profile card
+        // Profile card
         StudentProfileView profile = new StudentProfileView(student);
 
-        //Courses section header row
+        // Courses section header row
         Label coursesHeading = new Label("My Courses (" + myEnrollments.size() + ")");
         coursesHeading.setFont(Font.font("System", FontWeight.BOLD, 16));
 
@@ -100,9 +100,21 @@ public class StudentDashboard {
 
         // Courses table
         TableView<Enrollment> table = buildCoursesTable();
-        VBox center = new VBox(20, profile, new VBox(10, coursesHeaderRow));
-        center.setPadding(new Insets(20));
+        table.setPrefHeight(300);            // ← ensure it has a visible minimum size
+        VBox coursesBox = new VBox(10, coursesHeaderRow, table);
+        coursesBox.setPadding(new Insets(15));
+        coursesBox.setStyle(
+                "-fx-background-color: white; " +
+                        "-fx-border-color: #e1e4e8; " +
+                        "-fx-border-radius: 6; " +
+                        "-fx-background-radius: 6;"
+        );
         VBox.setVgrow(table, Priority.ALWAYS);
+
+        // Outer VBox holds profile + courses section
+        VBox center = new VBox(20, profile, coursesBox);
+        center.setPadding(new Insets(20));
+        VBox.setVgrow(coursesBox, Priority.ALWAYS);  // ← coursesBox grows inside center
         return center;
     }
 
