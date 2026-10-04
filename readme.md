@@ -25,7 +25,7 @@ Security
 - BCrypt password hashing (never stores plain passwords)
 - Prepared statements (SQL injection protection)
 - Secrets loaded from environment variables — no passwords in source
-- Role-based routing after login
+- Role-based routing after logi
 
 Tech Stack
 
